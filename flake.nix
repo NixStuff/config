@@ -160,7 +160,8 @@
             useGlobalPkgs = true;
             sharedModules = [plasma-manager.homeModules.plasma-manager];
             users.${baseSettings.sys.main-user} = import ./home.nix;
-            backupFileExtension = "backup";
+            backupFileExtension = "backup.bak";
+            overwriteBackup = true;
           };
         }
       ];
