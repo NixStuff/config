@@ -52,7 +52,7 @@
   };
   newSettings.${name} = {
     lang = {
-      timeZone = "America/Toronto";
+      timeZone = "Europe/Paris";
       defaultLang = "en_US.UTF-8";
       keyboardLayout = "fr";
     };
