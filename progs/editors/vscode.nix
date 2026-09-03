@@ -76,6 +76,9 @@ in (tools.fullModule rec {
               "editor.tabSize" = 2;
               "editor.insertSpaces" = true;
             };
+            "[vue]" = {
+              "editor.defaultFormatter" = "Vue.volar";
+            };
           }
           // (
             tools.ifEnabled config "config.progs.dev.lang.nix" {
