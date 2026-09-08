@@ -15,7 +15,8 @@
     branch = "latest";
     imports = [
       "nvidia"
-      "printer"
+      # "printer"
+      "images"
       "sound"
       "bluetooth"
     ];
@@ -24,7 +25,8 @@
     };
     settings = {
       nvidia.enable = true;
-      printer.enable = true;
+      # printer.enable = true;
+      images.enable = true;
       sound.enable = true;
       bluetooth.enable = true;
     };

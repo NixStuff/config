@@ -8,11 +8,20 @@
 }: let
   moduleParams = tools.moduleParams rec {
     inherit config lib pkgs-list parentPathAsList tools;
-    name = "printer";
+    name = "images";
+    subfolder = "images";
     main-repo = "nix";
     branch = "latest";
+    imports = [
+      "scanner"
+      "printer"
+    ];
     options = {
       enable = lib.mkEnableOption "Enables and configures ${name} hardware support.";
+    };
+    settings = {
+      printer.enable = true;
+      scanner.enable = true;
     };
   };
 in (tools.fullModule rec {
@@ -22,9 +31,10 @@ in (tools.fullModule rec {
   Home = {
   };
   System = {
-    services.printing.enable = true;
-    environment.systemPackages = with packages; [
-      cnijfilter2
-    ];
+    services.avahi = {
+      enable = true;
+      nssmdns4 = true;
+      openFirewall = true;
+    };
   };
 })
