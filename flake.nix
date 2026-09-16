@@ -33,6 +33,10 @@
     dev-vscode-extensions = {
       url = "github:MatthieuGomes/nixpkgs-dev/vscode-extensions";
     };
+    nix4vscode = {
+      url = "github:nix-community/nix4vscode";
+      inputs.nixpkgs.follows = "latestPkgs";
+    };
   };
 
   outputs = {
@@ -49,6 +53,7 @@
       ### Not sure if needed
       overlays = [
         Inputs.nur-latest-pkgs.overlays.default
+        Inputs.nix4vscode.overlays.default
       ];
       config = {
         allowUnfree = true;
@@ -59,6 +64,7 @@
       ### Not sure if needed
       overlays = [
         Inputs.nur-unstable-pkgs.overlays.default
+        Inputs.nix4vscode.overlays.default
       ];
       config = {
         allowUnfree = true;
