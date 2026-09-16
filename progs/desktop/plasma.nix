@@ -247,6 +247,9 @@ in (tools.fullModule rec {
         }
       ];
       kwin = {
+        titlebarButtons = {
+          left = [];
+        };
         virtualDesktops = {
           rows = 1;
           number = 3;
