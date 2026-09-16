@@ -36,6 +36,11 @@
     };
     options = {
       enable = lib.mkEnableOption "Enables ${name} program and related settings.";
+      defaultShell = lib.mkOption {
+        type = lib.types.str;
+        description = "The default shell to use for users.";
+        default = "zsh";
+      };
     };
     settings = {
       zsh = {

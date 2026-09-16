@@ -24,6 +24,11 @@
         default = {};
       };
       p10k.enable = lib.mkEnableOption "Enables powerlevel10k zsh theme.";
+package = lib.mkOption {
+        type = lib.types.package;
+        description = "The zsh package to use.";
+        default = pkgs-list.nix.latest.zsh;
+      };
     };
     settings = {
       oh-my-zsh = {
@@ -37,7 +42,8 @@
       fzf.enable = true;
     };
   };
-in (tools.fullModule rec {
+in
+  (tools.fullModule rec {
   inherit (moduleParams) config lib pkgs-list parentPathAsList tools;
   inherit (moduleParams) name togglable subfolder main-repo branch extras imports specialImports options settings;
   inherit (moduleParams) packages currentPathAsList currentDirPath cfg inheritedSettings Common;
@@ -99,3 +105,6 @@ in (tools.fullModule rec {
     programs.zsh.enable = true;
   };
 })
+// {
+    package = pkgs-list.nix.unstable.zsh;
+  }

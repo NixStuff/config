@@ -16,6 +16,7 @@
       enable = lib.mkEnableOption "Enables ${name} related settings.";
     };
   };
+  defaultShellName = config.progs.shells.defaultShell;
 in (tools.fullModule rec {
   inherit (moduleParams) config lib pkgs-list parentPathAsList tools;
   inherit (moduleParams) name togglable subfolder main-repo branch extras imports specialImports options settings;
@@ -23,7 +24,7 @@ in (tools.fullModule rec {
   System = {
     users = {
       # mutableUsers = false; # BAZINGA
-      defaultUserShell = packages.zsh;
+      defaultUserShell = config.progs.shells.${defaultShellName}.package;
       users = {
         ${config.sys.main-user} = {
           # password = ""; # BAZINGA
