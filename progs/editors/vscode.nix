@@ -484,17 +484,14 @@ in (tools.fullModule rec {
         # ];
       };
     };
-
-    home.activation = {
-      "${name}_settings" = let
-        config_path = "${config.xdg.configHome}/Code/User";
+    home.activation = let
+      profilesPath = "${config.home.homeDirectory}/.config/Code/User/profiles";
+    in {
+      stateDbCopy = let
+        defaultStatePath = "${config.home.homeDirectory}/.config/Code/User/globalStorage/state.vscdb";
       in
         lib.hm.dag.entryAfter ["writeBoundary"] ''
-          mkdir -p ${config_path}
-          rm -f ${config_path}/settings.json ${config_path}/keybindings.json
-          cp $newGenPath/home-files/.config/Code/User/settings.json ${config_path}/settings.json
-          cp $newGenPath/home-files/.config/Code/User/keybindings.json ${config_path}/keybindings.json
-          chmod 644 ${config_path}/settings.json ${config_path}/keybindings.json
+          run /etc/nixos/progs/editors/stateDbCpy.sh ${profilesPath} ${defaultStatePath}
         '';
       # "${name}_extensions" = let
       #   extensions_path = "$HOME/.vscode/extensions";

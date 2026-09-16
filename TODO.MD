@@ -87,5 +87,5 @@
     [ ] Fixing + adding githead
 
 [ ] Fixing VSCode state settings :
-    [ ] Find a way to generate state.vscdb file for specific profiles
+    [x] Find a way to generate state.vscdb file for specific profiles
     [ ] Finding the exact setting to toggle for "Use AI features" to be enabled on launch
