@@ -89,6 +89,7 @@
         });
       '';
     };
+    xdg.mime.enable = true;
   };
   ######  # computed
   SystemConfig =
