@@ -77,7 +77,10 @@
   ######  # user defined
   System = {
     system.stateVersion = config.sys.version;
-    nix.settings.experimental-features = ["nix-command" "flakes"];
+    nix.settings = {
+      experimental-features = ["nix-command" "flakes"];
+      trusted-users = ["root" "matthieu"];
+    };
     boot.kernelPackages = packages.linuxPackages_latest;
     security.polkit = {
       debug = true; # Enables `polkit.log` function
