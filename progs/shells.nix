@@ -22,7 +22,7 @@
         {
           nrs = "sudo nixos-rebuild switch";
           nrt = "sudo nixos-rebuild test";
-          ls = "ls --color -ah";
+          ls = "ls --color=auto -ah";
           ".." = "cd ..";
           myip = "myip";
         }
