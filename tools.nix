@@ -255,6 +255,129 @@ with lib; let
     if parentPath.enable && builtins.hasAttr name parentPath && modulePath
     then value
     else emptyValue;
+
+  loop = {
+    forInAttrSet = attrset: {};
+    forInList = list: result: affected:
+      list.forEach (element: result element);
+  };
+
+  forInLoop = attrset:
+    element {
+    };
+
+  forCounterLoop = iterated: counter: max: result: affected: {
+    forInList = iterated: result: affected:
+      iterated.forEach (element: result element counter);
+  };
+
+  vscode = rec {
+    fuse = profile1: profile2: {
+      keybindings =
+        (
+          if profile1 ? keybindings
+          then profile1.keybindings
+          else []
+        )
+        ++ (
+          if profile2 ? keybindings
+          then profile2.keybindings
+          else []
+        );
+      extensions =
+        (
+          if profile1 ? extensions
+          then profile1.extensions
+          else []
+        )
+        ++ (
+          if profile2 ? extensions
+          then profile2.extensions
+          else []
+        );
+      userSettings =
+        lib.attrsets.recursiveUpdate
+        (
+          if profile1 ? userSettings
+          then profile1.userSettings
+          else {}
+        )
+        (
+          if profile2 ? userSettings
+          then profile2.userSettings
+          else {}
+        );
+    };
+    namedFuse = name: profile1: profile2: {
+      "${name}" = vscode.fuse profile1 profile2;
+    };
+    combine = {
+      pair = profile_set1: profile_set2: let
+        first_name = lists.head (builtins.attrNames profile_set1);
+        second_name = lists.head (builtins.attrNames profile_set2);
+        first = profile_set1.${first_name};
+        second = profile_set2.${second_name};
+      in {
+        "${first_name} + ${second_name}" = vscode.fuse first second;
+      };
+      multiple = profile_set_list: let
+        copy_list = profile_set_list;
+        profile_list = profile_set_list.forEach (profile_set: builtins.attrsToList profile_set);
+        first_profile_set = lists.head profile_list;
+        second_profile_set = lists.head (lists.drop 1 profile_list);
+        rest_profile_set_list = lists.drop 2 copy_list;
+        combined_first_second = vscode.combinePair first_profile_set second_profile_set;
+      in
+        if (length profile_list == 2)
+        then combined_first_second
+        else vscode.combinePair combined_first_second (vscode.combineMultiple rest_profile_set_list);
+      full = {};
+    };
+    combinePair = profile_set1: profile_set2: let
+      first_name = lists.head (builtins.attrNames profile_set1);
+      second_name = lists.head (builtins.attrNames profile_set2);
+      first = profile_set1.${first_name};
+      second = profile_set2.${second_name};
+    in {
+      "${first_name} + ${second_name}" = vscode.fuse first second;
+    };
+
+    combineMultiple = profile_set_list: let
+      copy_list = profile_set_list;
+      profile_list = profile_set_list.forEach (profile_set: builtins.attrsToList profile_set);
+      first_profile_set = lists.head profile_list;
+      second_profile_set = lists.head (lists.drop 1 profile_list);
+      rest_profile_set_list = lists.drop 2 copy_list;
+      combined_first_second = vscode.combinePair first_profile_set second_profile_set;
+    in
+      if (length profile_list == 2)
+      then combined_first_second
+      else vscode.combinePair combined_first_second (vscode.combineMultiple rest_profile_set_list);
+
+    finishCombination = profile_set: root: let
+      profile = builtins.head (builtins.attrValues profile_set);
+      name = builtins.head (builtins.attrNames profile_set);
+    in
+      namedFuse "${name}" root profile;
+
+    generate = {
+      basics = base: basicsSet: let
+        profilesList = builtins.attrsToList profilesSet;
+      in
+        listToAttrs (profilesList.forEach (profile: {
+          name = profile.name;
+          value = fuse base profile.value;
+        }));
+
+      profiles = base: basicsSet: combinationsSet: let
+        combinationsList = builtins.attrsToList combinationsSet;
+        basicsList = builtins.attrsToList basicsSet;
+        defaultList = builtins.attrsToSet {default = base;};
+        profilesList = defaultList ++ combinationsList ++ basicsList;
+      in
+        listToAttrs profilesList;
+    };
+  };
 in {
-  inherit inheritance contextModuleImport contextualModule moduleParams fullModule ifEnabled;
+  inherit inheritance contextModuleImport contextualModule moduleParams fullModule ifEnabled vscode;
 }

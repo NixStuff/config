@@ -26,37 +26,28 @@ in (tools.fullModule rec {
       enable = true;
       package = packages.vscode;
       mutableExtensionsDir = false;
-      profiles.default = {
-        enableExtensionUpdateCheck = true;
-        enableUpdateCheck = true;
-        keybindings = [
-          {
-            command = "workbench.action.quit";
-            key = "ctrl+shift+q";
-          }
-          {
-            command = "-workbench.action.quit";
-            key = "ctrl+q";
-          }
-        ];
-        userSettings =
-          {
+      profiles = let
+        root = {
+          keybindings = [
+            {
+              command = "workbench.action.quit";
+              key = "ctrl+shift+q";
+            }
+            {
+              command = "-workbench.action.quit";
+              key = "ctrl+q";
+            }
+          ];
+          userSettings = {
             "telemetry.feedback.enabled" = false;
             "telemetry.editStats.enabled" = false;
-            "telemetry.telemetryLevel" = "off";
-
-            "http.proxySupport" = "off";
-            "security.workspace.trust.untrustedFiles" = "open";
-
-            "window.newWindowProfile" = "Default";
             "workbench.colorTheme" = "Dark Modern";
-            "window.dialogStyle" = "custom";
             "window.zoomLevel" = -1;
             "editor.minimap.enabled" = false;
             "editor.wordWrap" = "on";
             "scm.defaultViewMode" = "tree";
 
-            "diffEditor.ignoreTrimWhitespace" = true;
+            "diffEditor.ignoreTrimWhitespace" = false;
 
             "terminal.integrated.fontFamily" = "'JetBrainsMono Nerd Font'";
             "terminal.integrated.fontSize" = 15;
@@ -70,65 +61,111 @@ in (tools.fullModule rec {
               "markdown" = true;
               "scminput" = false;
             };
-            "chat.tips.enabled" = false;
+            "chat.disableAIFeatures" = false;
+            "ai-assisted-features.enabled" = true;
+          };
+          extensions = with packages.vscode-extensions;
+            [
+              github.vscode-github-actions
 
-            "[perl]" = {
-              "editor.tabSize" = 2;
-              "editor.insertSpaces" = true;
-            };
-            "[vue]" = {
-              "editor.defaultFormatter" = "Vue.volar";
-            };
-          }
-          // (
-            tools.ifEnabled config "config.progs.dev.lang.nix" {
-            }
-            // (
-              tools.ifEnabled config "config.progs.dev.lang.nix.nil" {
-                "nix.enableLanguageServer" = true;
-                "nix.serverPath" = "nil";
-              }
-              // (tools.ifEnabled config "config.progs.dev.lang.nix.alejandra" {
-                "nix.serverSettings" = {
-                  "nil" = {
-                    "formatting" = {
-                      "command" = [
-                        "alejandra"
-                      ];
+              ms-vscode-remote.remote-containers
+              ms-vscode-remote.remote-ssh
+              ms-vscode-remote.remote-ssh-edit
+              ms-vscode.remote-explorer
+
+              arrterian.nix-env-selector
+
+              gruntfuggly.todo-tree
+              jgclark.vscode-todo-highlight
+            ]
+            ++ (tools.ifEnabled config "config.progs.shells.direnv" [
+              mkhl.direnv
+            ])
+            ++ packages.nix4vscode.forVscode [
+              "joelkoz.nodeuml"
+              "GitHub.vscode-pull-request-github"
+            ];
+        };
+      in let
+        basics = {
+          Nix = {
+            userSettings =
+              {"github.copilot.enable" = {"nix" = true;};}
+              // (
+                (
+                  tools.ifEnabled config "config.progs.dev.lang.nix.nil" {
+                    "nix.enableLanguageServer" = true;
+                    "nix.serverPath" = "nil";
+                  }
+                  // (tools.ifEnabled config "config.progs.dev.lang.nix.alejandra" {
+                    "nix.serverSettings" = {
+                      "nil" = {
+                        "formatting" = {
+                          "command" = [
+                            "alejandra"
+                          ];
+                        };
+                      };
                     };
+                  })
+                )
+                // (tools.ifEnabled config "config.progs.dev.lang.nix.alejandra" {
+                  "[nix]" = {
+                    "editor.defaultFormatter" = "kamadorueda.alejandra";
+                    "editor.formatOnPaste" = false;
+                    "editor.formatOnSave" = false;
+                    "editor.formatOnType" = false;
                   };
+                  "nix.formatterPath" = "alejandra";
+                  "alejandra.program" = "alejandra";
+                })
+              );
+            extensions = with packages.vscode-extensions;
+              (tools.ifEnabled config "config.progs.dev.lang.nix" [
+                bbenoist.nix
+                jnoortheen.nix-ide
+              ])
+              ++ (tools.ifEnabled config "config.progs.dev.lang.nix.alejandra" [
+                kamadorueda.alejandra
+              ]);
+          };
+          Python = {
+            userSettings =
+              {"github.copilot.enable" = {"python" = true;};}
+              // (
+                tools.ifEnabled config "config.progs.dev.lang.python" {
+                  "python.analysis.typeCheckingMode" = "standard";
+                }
+              );
+            extensions = with packages.vscode-extensions; (tools.ifEnabled config "config.progs.dev.lang.python" [
+              ms-python.debugpy
+              ms-python.python
+              ms-python.vscode-pylance
+            ]);
+          };
+          Perl =
+            {"github.copilot.enable" = {"perl" = true;};}
+            // {
+              userSettings = {
+                "[perl]" = {
+                  "editor.tabSize" = 2;
+                  "editor.insertSpaces" = true;
                 };
-              })
-            )
-            // (tools.ifEnabled config "config.progs.dev.lang.nix.alejandra" {
-              "[nix]" = {
-                "editor.defaultFormatter" = "kamadorueda.alejandra";
-                "editor.formatOnPaste" = false;
-                "editor.formatOnSave" = false;
-                "editor.formatOnType" = false;
               };
-              "nix.formatterPath" = "alejandra";
-              "alejandra.program" = "alejandra";
-            })
-          )
-          // (tools.ifEnabled config "config.progs.dev.lang.python" {
-            "python.analysis.typeCheckingMode" = "standard";
-          })
-          // (tools.ifEnabled config "config.progs.dev.lang.latex" {
-            "latex-workshop.latex.recipe.default" = "first";
-            "latex-workshop.latex.clean.command" = "latexmk";
-            "latex-workshop.latex.tools" = [
-              {
-                "name" = "latexmk";
-                "command" = "latexmk";
-                "args" = [
-                  "-synctex=1"
-                  "-interaction=nonstopmode"
-                  "-file-line-error"
-                  "-pdf"
-                  "-outdir=%OUTDIR%"
-                  "%DOC%"
-                ];
+            };
+          Vue = {
+            userSettings = {
+              "[vue]" = {
+                "editor.defaultFormatter" = "Vue.volar";
+              };
+            };
+          };
+          LaTeX = {
+            userSettings =
+              {"github.copilot.enable" = {"latex" = true;};}
+              // (tools.ifEnabled config "config.progs.dev.lang.latex" {
+                "latex-workshop.latex.recipe.default" = "first";
+                "latex-workshop.latex.clean.command" = "latexmk";
                 "latex-workshop.latex.tools" = [
                   {
                     "name" = "latexmk";
@@ -140,6 +177,133 @@ in (tools.fullModule rec {
                       "-pdf"
                       "-outdir=%OUTDIR%"
                       "%DOC%"
+                    ];
+                    "latex-workshop.latex.tools" = [
+                      {
+                        "name" = "latexmk";
+                        "command" = "latexmk";
+                        "args" = [
+                          "-synctex=1"
+                          "-interaction=nonstopmode"
+                          "-file-line-error"
+                          "-pdf"
+                          "-outdir=%OUTDIR%"
+                          "%DOC%"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "lualatexmk";
+                        "command" = "latexmk";
+                        "args" = [
+                          "-synctex=1"
+                          "-interaction=nonstopmode"
+                          "-file-line-error"
+                          "-lualatex"
+                          "-outdir=%OUTDIR%"
+                          "%DOC%"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "xelatexmk";
+                        "command" = "latexmk";
+                        "args" = [
+                          "-synctex=1"
+                          "-interaction=nonstopmode"
+                          "-file-line-error"
+                          "-xelatex"
+                          "-shell-escape"
+                          "-outdir=%OUTDIR%"
+                          "%DOC%"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "latexmk_rconly";
+                        "command" = "latexmk";
+                        "args" = [
+                          "%DOC%"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "pdflatex";
+                        "command" = "pdflatex";
+                        "args" = [
+                          "-synctex=1"
+                          "-interaction=nonstopmode"
+                          "-file-line-error"
+                          "%DOC%"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "bibtex";
+                        "command" = "bibtex";
+                        "args" = [
+                          "%DOCFILE%"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "rnw2tex";
+                        "command" = "Rscript";
+                        "args" = [
+                          "-e"
+                          "knitr==opts_knit$set(concordance = TRUE); knitr==knit('%DOCFILE_EXT%')"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "jnw2tex";
+                        "command" = "julia";
+                        "args" = [
+                          "-e"
+                          "using Weave; weave(\"%DOC_EXT%\" doctype=\"tex\")"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "jnw2texminted";
+                        "command" = "julia";
+                        "args" = [
+                          "-e"
+                          "using Weave; weave(\"%DOC_EXT%\" doctype=\"texminted\")"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "pnw2tex";
+                        "command" = "pweave";
+                        "args" = [
+                          "-f"
+                          "tex"
+                          "%DOC_EXT%"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "pnw2texminted";
+                        "command" = "pweave";
+                        "args" = [
+                          "-f"
+                          "texminted"
+                          "%DOC_EXT%"
+                        ];
+                        "env" = {};
+                      }
+                      {
+                        "name" = "tectonic";
+                        "command" = "tectonic";
+                        "args" = [
+                          "--synctex"
+                          "--keep-logs"
+                          "--print"
+                          "%DOC%.tex"
+                        ];
+                        "env" = {};
+                      }
                     ];
                     "env" = {};
                   }
@@ -164,7 +328,6 @@ in (tools.fullModule rec {
                       "-interaction=nonstopmode"
                       "-file-line-error"
                       "-xelatex"
-                      "-shell-escape"
                       "-outdir=%OUTDIR%"
                       "%DOC%"
                     ];
@@ -256,233 +419,109 @@ in (tools.fullModule rec {
                     "env" = {};
                   }
                 ];
-                "env" = {};
-              }
-              {
-                "name" = "lualatexmk";
-                "command" = "latexmk";
-                "args" = [
-                  "-synctex=1"
-                  "-interaction=nonstopmode"
-                  "-file-line-error"
-                  "-lualatex"
-                  "-outdir=%OUTDIR%"
-                  "%DOC%"
+                "latex-workshop.latex.recipes" = [
+                  {
+                    "name" = "latexmk (xelatex)";
+                    "tools" = [
+                      "xelatexmk"
+                    ];
+                  }
+                  {
+                    "name" = "latexmk (lualatex)";
+                    "tools" = [
+                      "lualatexmk"
+                    ];
+                  }
+                  {
+                    "name" = "latexmk";
+                    "tools" = [
+                      "latexmk"
+                    ];
+                  }
+                  {
+                    "name" = "latexmk (latexmkrc)";
+                    "tools" = [
+                      "latexmk_rconly"
+                    ];
+                  }
+                  {
+                    "name" = "pdflatex -> bibtex -> pdflatex * 2";
+                    "tools" = [
+                      "pdflatex"
+                      "bibtex"
+                      "pdflatex"
+                      "pdflatex"
+                    ];
+                  }
+                  {
+                    "name" = "Compile Rnw files";
+                    "tools" = [
+                      "rnw2tex"
+                    ];
+                  }
+                  {
+                    "name" = "Compile Jnw files";
+                    "tools" = [
+                      "jnw2tex"
+                    ];
+                  }
+                  {
+                    "name" = "Compile Pnw files";
+                    "tools" = [
+                      "pnw2tex"
+                    ];
+                  }
+                  {
+                    "name" = "tectonic";
+                    "tools" = [
+                      "tectonic"
+                    ];
+                  }
                 ];
-                "env" = {};
-              }
-              {
-                "name" = "xelatexmk";
-                "command" = "latexmk";
-                "args" = [
-                  "-synctex=1"
-                  "-interaction=nonstopmode"
-                  "-file-line-error"
-                  "-xelatex"
-                  "-outdir=%OUTDIR%"
-                  "%DOC%"
+                "latex-workshop.formatting.latex" = "tex-fmt";
+                "[latex]" = {
+                  "editor.quickSuggestions" = {
+                    "strings" = true;
+                  };
+                };
+              });
+            extensions = with packages.vscode-extensions; (tools.ifEnabled config "config.progs.dev.lang.latex" [
+              james-yu.latex-workshop
+            ]);
+          };
+        };
+      in let
+        composite = {};
+      in let
+        profiles =
+          {
+            default = {
+              enableExtensionUpdateCheck = false;
+              enableUpdateCheck = true;
+              inherit (root) keybindings;
+              userSettings =
+                root.userSettings
+                // {
+                  "telemetry.telemetryLevel" = "off";
+                  "http.proxySupport" = "off";
+                  "security.workspace.trust.untrustedFiles" = "open";
+                  "window.dialogStyle" = "custom";
+                  "chat.tips.enabled" = false;
+                  "window.newWindowProfile" = "Default";
+                };
+              extensions = with packages.vscode-extensions;
+                root.extensions
+                ++ [
+                  tamasfe.even-better-toml
                 ];
-                "env" = {};
-              }
-              {
-                "name" = "latexmk_rconly";
-                "command" = "latexmk";
-                "args" = [
-                  "%DOC%"
-                ];
-                "env" = {};
-              }
-              {
-                "name" = "pdflatex";
-                "command" = "pdflatex";
-                "args" = [
-                  "-synctex=1"
-                  "-interaction=nonstopmode"
-                  "-file-line-error"
-                  "%DOC%"
-                ];
-                "env" = {};
-              }
-              {
-                "name" = "bibtex";
-                "command" = "bibtex";
-                "args" = [
-                  "%DOCFILE%"
-                ];
-                "env" = {};
-              }
-              {
-                "name" = "rnw2tex";
-                "command" = "Rscript";
-                "args" = [
-                  "-e"
-                  "knitr==opts_knit$set(concordance = TRUE); knitr==knit('%DOCFILE_EXT%')"
-                ];
-                "env" = {};
-              }
-              {
-                "name" = "jnw2tex";
-                "command" = "julia";
-                "args" = [
-                  "-e"
-                  "using Weave; weave(\"%DOC_EXT%\" doctype=\"tex\")"
-                ];
-                "env" = {};
-              }
-              {
-                "name" = "jnw2texminted";
-                "command" = "julia";
-                "args" = [
-                  "-e"
-                  "using Weave; weave(\"%DOC_EXT%\" doctype=\"texminted\")"
-                ];
-                "env" = {};
-              }
-              {
-                "name" = "pnw2tex";
-                "command" = "pweave";
-                "args" = [
-                  "-f"
-                  "tex"
-                  "%DOC_EXT%"
-                ];
-                "env" = {};
-              }
-              {
-                "name" = "pnw2texminted";
-                "command" = "pweave";
-                "args" = [
-                  "-f"
-                  "texminted"
-                  "%DOC_EXT%"
-                ];
-                "env" = {};
-              }
-              {
-                "name" = "tectonic";
-                "command" = "tectonic";
-                "args" = [
-                  "--synctex"
-                  "--keep-logs"
-                  "--print"
-                  "%DOC%.tex"
-                ];
-                "env" = {};
-              }
-            ];
-            "latex-workshop.latex.recipes" = [
-              {
-                "name" = "latexmk (xelatex)";
-                "tools" = [
-                  "xelatexmk"
-                ];
-              }
-              {
-                "name" = "latexmk (lualatex)";
-                "tools" = [
-                  "lualatexmk"
-                ];
-              }
-              {
-                "name" = "latexmk";
-                "tools" = [
-                  "latexmk"
-                ];
-              }
-              {
-                "name" = "latexmk (latexmkrc)";
-                "tools" = [
-                  "latexmk_rconly"
-                ];
-              }
-              {
-                "name" = "pdflatex -> bibtex -> pdflatex * 2";
-                "tools" = [
-                  "pdflatex"
-                  "bibtex"
-                  "pdflatex"
-                  "pdflatex"
-                ];
-              }
-              {
-                "name" = "Compile Rnw files";
-                "tools" = [
-                  "rnw2tex"
-                ];
-              }
-              {
-                "name" = "Compile Jnw files";
-                "tools" = [
-                  "jnw2tex"
-                ];
-              }
-              {
-                "name" = "Compile Pnw files";
-                "tools" = [
-                  "pnw2tex"
-                ];
-              }
-              {
-                "name" = "tectonic";
-                "tools" = [
-                  "tectonic"
-                ];
-              }
-            ];
-            "latex-workshop.formatting.latex" = "tex-fmt";
-            "[latex]" = {
-              "editor.quickSuggestions" = {
-                "strings" = true;
-              };
             };
-          });
-
-        extensions = with packages.vscode-extensions;
-          [
-            github.vscode-github-actions
-            github.vscode-pull-request-github
-
-            ms-vscode-remote.remote-containers
-            ms-vscode-remote.remote-ssh
-            ms-vscode-remote.remote-ssh-edit
-            ms-vscode.remote-explorer
-          ]
-          ++ [
-            pkgs-list.others.dev.vscode-extensions.vscode-extensions.joelkoz.nodeuml
-            # pkgs-list.others.dev.vscode-extensions.vscode-extensions.danielatanasov.todo
-            # pkgs-list.others.dev.vscode-extensions.vscode-extensions.prateekmahendrakar.prettyxml
-            # pkgs-list.others.dev.vscode-extensions.vscode-extensions.zhiyuan-lin.simple-perl
-          ]
-          ++ (tools.ifEnabled config "config.progs.shells.direnv" [
-            mkhl.direnv
-          ])
-          ++ [
-            gruntfuggly.todo-tree
-            jgclark.vscode-todo-highlight
-          ]
-          ++ (tools.ifEnabled config "config.progs.dev.lang.nix" [
-            arrterian.nix-env-selector
-            bbenoist.nix
-            jnoortheen.nix-ide
-          ])
-          ++ (tools.ifEnabled config "config.progs.dev.lang.nix.alejandra" [
-            kamadorueda.alejandra
-          ])
-          ++ (tools.ifEnabled config "config.progs.dev.lang.python" [
-            ms-python.debugpy
-            ms-python.python
-            ms-python.vscode-pylance
-          ])
-          ++ (tools.ifEnabled config "config.progs.dev.lang.latex" [
-            james-yu.latex-workshop
-          ])
-          ++ [
-            tamasfe.even-better-toml
-          ];
-        # ++ [
-        #   DavidAnson.vscode-markdownlint
-        # ];
-      };
+          }
+          // tools.vscode.namedFuse "Nix" basics.Nix root // tools.vscode.namedFuse "Python" basics.Python root // tools.vscode.namedFuse "Perl" basics.Perl root // tools.vscode.namedFuse "Vue" basics.Vue root // tools.vscode.namedFuse "LaTeX" basics.LaTeX root;
+      in
+        {
+          inherit (profiles) default Nix Python Perl Vue LaTeX;
+        }
+        // tools.vscode.finishCombination (tools.vscode.combinePair {Nix = basics.Nix;} {Python = basics.Python;}) root;
     };
     home.activation = let
       profilesPath = "${config.home.homeDirectory}/.config/Code/User/profiles";
@@ -493,19 +532,11 @@ in (tools.fullModule rec {
         lib.hm.dag.entryAfter ["writeBoundary"] ''
           run /etc/nixos/progs/editors/stateDbCpy.sh ${profilesPath} ${defaultStatePath}
         '';
-      # "${name}_extensions" = let
-      #   extensions_path = "$HOME/.vscode/extensions";
-      #   extensions_editable_path = "$HOME/.vscode/extensions-editable";
+      # iconProfilesAttribution = let
+      #   storageFilePath = "${config.home.homeDirectory}/.config/Code/User/profiles";
       # in
       #   lib.hm.dag.entryAfter ["writeBoundary"] ''
-      #     mkdir -p ${extensions_editable_path}
-      #     cp -r $newGenPath/home-files/.vscode/extensions/* ${extensions_editable_path}/
-      #     rm -f ${extensions_editable_path}/extensions.json
-      #     cp $newGenPath/home-files/.vscode/extensions/extensions.json ${extensions_editable_path}/extensions.json
-      #     chmod 644 ${extensions_editable_path}/extensions.json
-      #     chmod 755 ${extensions_editable_path}
-      #     rm -rf ${extensions_path}
-      #     mv ${extensions_editable_path} ${extensions_path}
+      #     run 
       #   '';
     };
   };
